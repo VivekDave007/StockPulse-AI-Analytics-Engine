@@ -25,9 +25,9 @@
 
 ## 🎥 Live Preview
 
-> **Dashboard** → `http://127.0.0.1:8000/static/index.html`
-> **Swagger Docs** → `http://127.0.0.1:8000/docs`
-> **ReDoc** → `http://127.0.0.1:8000/redoc`
+> **Dashboard** → `https://stockpulse-ensv.onrender.com/static/index.html`
+> **Swagger Docs** → `https://stockpulse-ensv.onrender.com/docs`
+> **ReDoc** → `https://stockpulse-ensv.onrender.com/redoc`
 
 ---
 
@@ -216,9 +216,9 @@ uvicorn main:app --reload
 
 | Resource | URL |
 |----------|-----|
-| 🖥️ Dashboard UI | [http://127.0.0.1:8000/static/index.html](http://127.0.0.1:8000/static/index.html) |
-| 📚 Swagger Docs | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
-| 📖 ReDoc | [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc) |
+| 🖥️ Dashboard UI | [https://stockpulse-ensv.onrender.com/static/index.html](https://stockpulse-ensv.onrender.com/static/index.html) |
+| 📚 Swagger Docs | [https://stockpulse-ensv.onrender.com/docs](https://stockpulse-ensv.onrender.com/docs) |
+| 📖 ReDoc | [https://stockpulse-ensv.onrender.com/redoc](https://stockpulse-ensv.onrender.com/redoc) |
 
 ---
 
