@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import yfinance as yf
@@ -28,7 +28,7 @@ DEFAULT_COMPANIES = ["INFY.NS", "TCS.NS", "RELIANCE.NS", "AAPL", "MSFT", "GOOGL"
 # TASK 5: Root Endpoint
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Stock Data Dashboard. Visit /static/index.html to view the dashboard UI."}
+    return RedirectResponse(url="/static/index.html")
 
 # TASK 6.1: Companies API
 @app.get("/companies")
