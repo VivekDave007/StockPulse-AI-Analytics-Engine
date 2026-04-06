@@ -95,6 +95,34 @@ def compare_stocks(symbol1: str, symbol2: str):
         }
     }
 
+# TASK 6.5: Market Movers API
+@app.get("/market/movers")
+def get_market_movers():
+    try:
+        data = []
+        for sym in DEFAULT_COMPANIES:
+            ticker = yf.Ticker(sym)
+            hist = ticker.history(period="5d")
+            if len(hist) >= 2:
+                prev_close = float(hist['Close'].iloc[-2])
+                curr_close = float(hist['Close'].iloc[-1])
+                pct_change = ((curr_close - prev_close) / prev_close) * 100
+                data.append({
+                    "symbol": sym,
+                    "price": round(curr_close, 2),
+                    "change_pct": round(pct_change, 2)
+                })
+        
+        # Sort sequentially
+        data.sort(key=lambda x: x["change_pct"], reverse=True)
+        return {
+            "top_gainers": [x for x in data if x["change_pct"] > 0][:3],  # Up to 3 positive
+            "top_losers": [x for x in data if x["change_pct"] < 0][::-1][:3], # Up to 3 negative
+            "neutral": [x for x in data if x["change_pct"] == 0]
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 # TASK 8: Predict API
 @app.get("/predict/{symbol}")
 def predict_stock(symbol: str):

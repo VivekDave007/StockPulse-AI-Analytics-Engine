@@ -952,6 +952,27 @@
                 <p>Real-time stock overview — enter a symbol above and press <strong>Analyze</strong>.</p>
             </div>
 
+            <!-- Market Movers (Top Gainers / Losers) -->
+            <div class="market-movers" id="marketMovers" style="display:none; margin-bottom: 24px;">
+                <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    📊 Market Movers (Watchlist)
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                    <div style="background: var(--bg-card); border-left: 4px solid var(--accent-success); padding: 16px; border-radius: var(--radius-md);">
+                        <h4 style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; font-weight: 700;">Top Gainers</h4>
+                        <div id="topGainersList" style="display: flex; flex-direction: column; gap: 8px;">
+                            <div class="skeleton" style="height: 20px; width: 100%;"></div>
+                        </div>
+                    </div>
+                    <div style="background: var(--bg-card); border-left: 4px solid var(--accent-danger); padding: 16px; border-radius: var(--radius-md);">
+                        <h4 style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; font-weight: 700;">Top Losers</h4>
+                        <div id="topLosersList" style="display: flex; flex-direction: column; gap: 8px;">
+                            <div class="skeleton" style="height: 20px; width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Summary Stats -->
             <div class="stats-grid" id="summaryStats">
                 <div class="stat-card">
@@ -1487,10 +1508,30 @@
     }
 
     // ==============================
+    // MARKET MOVERS (Gainers / Losers)
+    // ==============================
+    async function loadMarketMovers() {
+        document.getElementById('marketMovers').style.display = 'block';
+        try {
+            const res = await fetch('/market/movers');
+            const data = await res.json();
+            if(!data.error) {
+                const gainersHtml = data.top_gainers.map(g => `<div style="display: flex; justify-content: space-between; font-size: 0.95rem; padding: 4px 0;"><strong>${g.symbol}</strong> <span style="color: var(--accent-success); font-weight: 600;">+${g.change_pct}%</span></div>`).join('');
+                const losersHtml = data.top_losers.map(l => `<div style="display: flex; justify-content: space-between; font-size: 0.95rem; padding: 4px 0;"><strong>${l.symbol}</strong> <span style="color: var(--accent-danger); font-weight: 600;">${l.change_pct}%</span></div>`).join('');
+                document.getElementById('topGainersList').innerHTML = gainersHtml || '<span style="color: var(--text-muted); font-size: 0.85rem;">No gainers today</span>';
+                document.getElementById('topLosersList').innerHTML = losersHtml || '<span style="color: var(--text-muted); font-size: 0.85rem;">No losers today</span>';
+            }
+        } catch(e) {
+            console.error('Failed to load market movers', e);
+        }
+    }
+
+    // ==============================
     // INIT
     // ==============================
     document.addEventListener('DOMContentLoaded', () => {
         loadCompanies();
+        loadMarketMovers();
     });
 </script>
 
