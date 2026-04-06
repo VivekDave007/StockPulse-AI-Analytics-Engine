@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockPulse — AI-Powered Stock Analytics</title>
+    <meta name="description" content="Real-time stock analytics dashboard with AI-powered price predictions, correlation analysis, and interactive charts.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ==============================
+           DESIGN SYSTEM & TOKENS
+        ============================== */
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a2035;
+            --bg-card-hover: #1e2744;
+            --bg-glass: rgba(26, 32, 53, 0.7);
+            --bg-input: #0d1323;
+
+            --accent-primary: #6366f1;
+            --accent-primary-glow: rgba(99, 102, 241, 0.35);
+            --accent-secondary: #22d3ee;
+            --accent-success: #10b981;
+            --accent-success-glow: rgba(16, 185, 129, 0.25);
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --accent-pink: #ec4899;
+
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+
+            --border-subtle: rgba(148, 163, 184, 0.08);
+            --border-active: rgba(99, 102, 241, 0.4);
+
+            --gradient-hero: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+            --gradient-card: linear-gradient(145deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.04) 100%);
+            --gradient-success: linear-gradient(135deg, #10b981 0%, #22d3ee 100%);
+
+            --shadow-lg: 0 20px 60px rgba(0,0,0,0.4);
+            --shadow-card: 0 4px 20px rgba(0,0,0,0.25);
+            --shadow-glow: 0 0 40px var(--accent-primary-glow);
+
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ==============================
+           GLOBAL RESET & BASE
+        ============================== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+        /* ==============================
+           LAYOUT
+        ============================== */
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ==============================
+           SIDEBAR
+        ============================== */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+            transition: var(--transition);
+        }
+
+        .sidebar-brand {
+            padding: 28px 24px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .sidebar-brand h1 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            background: var(--gradient-hero);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-brand span {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-section-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            padding: 16px 12px 8px;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 14px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            border: 1px solid transparent;
+            user-select: none;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: rgba(99, 102, 241, 0.12);
+            color: var(--accent-primary);
+            border-color: var(--border-active);
+        }
+
+        .nav-item .nav-icon {
+            font-size: 1.15rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* ==============================
+           MAIN CONTENT
+        ============================== */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 0;
+        }
+
+        /* Top Bar */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 36px;
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .topbar-search {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 10px 18px;
+            width: 380px;
+            transition: var(--transition);
+        }
+
+        .topbar-search:focus-within {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-primary-glow);
+        }
+
+        .topbar-search .search-icon { color: var(--text-muted); font-size: 1rem; }
+
+        .topbar-search input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: var(--font);
+            width: 100%;
+        }
+
+        .topbar-search input::placeholder { color: var(--text-muted); }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .topbar-btn {
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            padding: 10px 22px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: var(--font);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .topbar-btn:hover {
+            background: #5558e6;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .topbar-btn.loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* ==============================
+           PAGES / SECTIONS
+        ============================== */
+        .page { display: none; padding: 32px 36px; animation: fadeIn 0.35s ease; }
+        .page.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-header {
+            margin-bottom: 28px;
+        }
+
+        .page-header h2 {
+            font-size: 1.65rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 6px;
+        }
+
+        /* ==============================
+           STAT CARDS
+        ============================== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 22px 24px;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--gradient-hero);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-active);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-card);
+        }
+
+        .stat-card:hover::before { opacity: 1; }
+
+        .stat-card .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .stat-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .stat-card .stat-change {
+            font-size: 0.78rem;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .stat-card .stat-change.positive { color: var(--accent-success); }
+        .stat-card .stat-change.negative { color: var(--accent-danger); }
+
+        .stat-icon {
+            position: absolute;
+            top: 20px; right: 20px;
+            font-size: 1.8rem;
+            opacity: 0.3;
+        }
+
+        /* ==============================
+           CHART CONTAINER
+        ============================== */
+        .chart-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin-bottom: 28px;
+            position: relative;
+        }
+
+        .chart-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-panel-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .chart-panel-header .badge {
+            background: rgba(99,102,241,0.15);
+            color: var(--accent-primary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 350px;
+        }
+
+        .chart-wrapper canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* ==============================
+           PREDICTIONS PANEL
+        ============================== */
+        .predictions-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin-bottom: 28px;
+            display: none;
+        }
+
+        .predictions-panel.visible { display: block; animation: fadeIn 0.4s ease; }
+
+        .predictions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .predictions-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .predictions-header .ai-badge {
+            background: var(--gradient-success);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .prediction-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .prediction-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .prediction-item:hover {
+            border-color: var(--accent-success);
+            background: rgba(16, 185, 129, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .prediction-item .pred-date {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .prediction-item .pred-price {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent-success);
+        }
+
+        /* ==============================
+           COMPARE PAGE
+        ============================== */
+        .compare-inputs {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .compare-inputs .field-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .field-group label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .field-group input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: var(--font);
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .field-group input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-primary-glow);
+        }
+
+        .compare-result {
+            display: none;
+            gap: 20px;
+            margin-top: 24px;
+        }
+
+        .compare-result.visible {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .compare-card {
+            background: var(--gradient-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .compare-card:hover {
+            border-color: var(--border-active);
+            transform: translateY(-3px);
+        }
+
+        .compare-card .compare-symbol {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--accent-primary);
+        }
+
+        .compare-card .compare-price {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .compare-card .compare-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 6px;
+        }
+
+        /* Correlation Result */
+        .correlation-result {
+            display: none;
+            margin-top: 24px;
+        }
+
+        .correlation-result.visible {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .correlation-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            text-align: center;
+        }
+
+        .correlation-value {
+            font-size: 3rem;
+            font-weight: 800;
+            background: var(--gradient-hero);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .correlation-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .correlation-bar-container {
+            margin-top: 20px;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .correlation-bar {
+            height: 100%;
+            border-radius: 20px;
+            background: var(--gradient-hero);
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ==============================
+           COMPANIES / WATCHLIST
+        ============================== */
+        .company-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .company-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 22px 24px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .company-card:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-card);
+        }
+
+        .company-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .company-card:nth-child(1) .company-icon { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+        .company-card:nth-child(2) .company-icon { background: linear-gradient(135deg, #22d3ee, #06b6d4); }
+        .company-card:nth-child(3) .company-icon { background: linear-gradient(135deg, #f59e0b, #f97316); }
+        .company-card:nth-child(4) .company-icon { background: linear-gradient(135deg, #10b981, #14b8a6); }
+        .company-card:nth-child(5) .company-icon { background: linear-gradient(135deg, #ef4444, #f43f5e); }
+        .company-card:nth-child(6) .company-icon { background: linear-gradient(135deg, #ec4899, #a855f7); }
+
+        .company-info h4 { font-size: 1rem; font-weight: 600; }
+        .company-info p { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+
+        /* ==============================
+           BUTTONS
+        ============================== */
+        .btn {
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: var(--font);
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5558e6;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .btn-success {
+            background: var(--accent-success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #0ea572;
+            transform: translateY(-1px);
+            box-shadow: 0 0 30px var(--accent-success-glow);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            background: rgba(99,102,241,0.05);
+        }
+
+        .btn.loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* ==============================
+           DATA TABLE
+        ============================== */
+        .data-table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-bottom: 28px;
+            display: none;
+        }
+
+        .data-table-container.visible { display: block; animation: fadeIn 0.4s ease; }
+
+        .data-table-container .table-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .data-table-container .table-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table thead th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 600;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .data-table tbody td {
+            padding: 12px 16px;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(99,102,241,0.04);
+        }
+
+        .data-table tbody tr:last-child td { border-bottom: none; }
+
+        /* ==============================
+           TOAST / NOTIFICATION
+        ============================== */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 14px 20px;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            box-shadow: var(--shadow-lg);
+            animation: slideInRight 0.4s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 280px;
+        }
+
+        .toast.success { border-left: 3px solid var(--accent-success); }
+        .toast.error { border-left: 3px solid var(--accent-danger); }
+        .toast.info { border-left: 3px solid var(--accent-primary); }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(60px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ==============================
+           LOADING SPINNER
+        ============================== */
+        .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius-sm);
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ==============================
+           EMPTY STATE
+        ============================== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h4 {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 0.85rem;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        /* ==============================
+           RESPONSIVE
+        ============================== */
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; }
+            .topbar { padding: 14px 20px; }
+            .topbar-search { width: 240px; }
+            .page { padding: 20px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .compare-result.visible { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .topbar-search { width: 160px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-layout">
+
+    <!-- ====== SIDEBAR ====== -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <h1>StockPulse</h1>
+            <span>AI Analytics Engine</span>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">Analytics</div>
+            <div class="nav-item active" id="nav-dashboard" onclick="switchPage('dashboard')">
+                <span class="nav-icon">📊</span> Dashboard
+            </div>
+            <div class="nav-item" id="nav-predict" onclick="switchPage('predict')">
+                <span class="nav-icon">🤖</span> AI Predictions
+            </div>
+            <div class="nav-item" id="nav-compare" onclick="switchPage('compare')">
+                <span class="nav-icon">⚖️</span> Compare & Correlate
+            </div>
+            <div class="nav-section-label">Data</div>
+            <div class="nav-item" id="nav-companies" onclick="switchPage('companies')">
+                <span class="nav-icon">🏢</span> Watchlist
+            </div>
+            <div class="nav-item" id="nav-table" onclick="switchPage('table')">
+                <span class="nav-icon">📋</span> Raw Data
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            StockPulse v1.0 &mdash; FastAPI + Chart.js<br>
+            Built with ❤️ &amp; scikit-learn
+        </div>
+    </aside>
+
+    <!-- ====== MAIN ====== -->
+    <main class="main-content">
+
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar-search">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="globalSymbolInput" placeholder="Search stock symbol (e.g. AAPL, MSFT, TCS.NS)..." />
+            </div>
+            <div class="topbar-actions">
+                <button class="topbar-btn" id="loadDataBtn" onclick="loadGlobalData()">
+                    <span>⚡</span> Analyze
+                </button>
+            </div>
+        </header>
+
+        <!-- ====== PAGE: Dashboard ====== -->
+        <section class="page active" id="page-dashboard">
+            <div class="page-header">
+                <h2>Dashboard</h2>
+                <p>Real-time stock overview — enter a symbol above and press <strong>Analyze</strong>.</p>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="stats-grid" id="summaryStats">
+                <div class="stat-card">
+                    <div class="stat-label">52-Week High</div>
+                    <div class="stat-value" id="stat52High">—</div>
+                    <div class="stat-icon">📈</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">52-Week Low</div>
+                    <div class="stat-value" id="stat52Low">—</div>
+                    <div class="stat-icon">📉</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Avg Close (1yr)</div>
+                    <div class="stat-value" id="statAvgClose">—</div>
+                    <div class="stat-icon">💹</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Current Symbol</div>
+                    <div class="stat-value" id="statSymbol">—</div>
+                    <div class="stat-icon">🏷️</div>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="chart-panel">
+                <div class="chart-panel-header">
+                    <h3>Closing Price (Last 30 Days)</h3>
+                    <span class="badge" id="chartBadge">Live Data</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====== PAGE: AI Predictions ====== -->
+        <section class="page" id="page-predict">
+            <div class="page-header">
+                <h2>AI Predictions</h2>
+                <p>Leveraging Linear Regression to forecast the next 7 trading days.</p>
+            </div>
+
+            <div style="margin-bottom: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
+                <button class="btn btn-success" id="predictBtn" onclick="runPrediction()">
+                    <span>🧠</span> Generate Forecast
+                </button>
+                <span style="color: var(--text-muted); font-size: 0.82rem; align-self: center;"
+                    id="predictHint">Enter a symbol in the top bar first, then click Analyze.</span>
+            </div>
+
+            <!-- Prediction Chart -->
+            <div class="chart-panel" id="predChartPanel" style="display:none;">
+                <div class="chart-panel-header">
+                    <h3>Price Forecast</h3>
+                    <span class="badge">Machine Learning</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="predictionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Prediction Cards -->
+            <div class="predictions-panel" id="predictionPanel">
+                <div class="predictions-header">
+                    <h3>Predicted Prices <span class="ai-badge">AI Powered</span></h3>
+                </div>
+                <div class="prediction-grid" id="predictionGrid"></div>
+            </div>
+        </section>
+
+        <!-- ====== PAGE: Compare & Correlate ====== -->
+        <section class="page" id="page-compare">
+            <div class="page-header">
+                <h2>Compare & Correlate</h2>
+                <p>Side-by-side price comparison and Pearson correlation analysis between two assets.</p>
+            </div>
+
+            <div class="compare-inputs">
+                <div class="field-group">
+                    <label>Symbol 1</label>
+                    <input type="text" id="compareSymbol1" placeholder="e.g. AAPL" />
+                </div>
+                <div class="field-group">
+                    <label>Symbol 2</label>
+                    <input type="text" id="compareSymbol2" placeholder="e.g. MSFT" />
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
+                <button class="btn btn-primary" onclick="runCompare()">⚡ Compare Prices</button>
+                <button class="btn btn-outline" onclick="runCorrelation()">📐 Correlation Analysis</button>
+            </div>
+
+            <div class="compare-result" id="compareResult">
+                <div class="compare-card">
+                    <div class="compare-symbol" id="cmpSym1">—</div>
+                    <div class="compare-price" id="cmpPrice1">—</div>
+                    <div class="compare-label">Latest Close</div>
+                </div>
+                <div class="compare-card">
+                    <div class="compare-symbol" id="cmpSym2">—</div>
+                    <div class="compare-price" id="cmpPrice2">—</div>
+                    <div class="compare-label">Latest Close</div>
+                </div>
+            </div>
+
+            <div class="correlation-result" id="correlationResult">
+                <div class="correlation-card">
+                    <div class="correlation-value" id="corrValue">0.00</div>
+                    <div class="correlation-label">Pearson Correlation Coefficient</div>
+                    <div class="correlation-bar-container">
+                        <div class="correlation-bar" id="corrBar" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====== PAGE: Watchlist ====== -->
+        <section class="page" id="page-companies">
+            <div class="page-header">
+                <h2>Watchlist</h2>
+                <p>Quick-access symbols tracked by the system. Click any card to analyze it.</p>
+            </div>
+            <div class="company-grid" id="companyGrid">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+        <!-- ====== PAGE: Raw Data Table ====== -->
+        <section class="page" id="page-table">
+            <div class="page-header">
+                <h2>Raw Data</h2>
+                <p>Last 30 data points with all computed metrics — daily return, 7-day MA, volatility.</p>
+            </div>
+
+            <div class="data-table-container visible" id="rawTable">
+                <div class="table-header">
+                    <h3 id="tableTitle">No data loaded yet</h3>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Open</th>
+                                <th>High</th>
+                                <th>Low</th>
+                                <th>Close</th>
+                                <th>Volume</th>
+                                <th>Daily Return</th>
+                                <th>MA 7</th>
+                                <th>Volatility</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+                            <tr><td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">Use the top bar to analyze a stock first.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+    // ==============================
+    // STATE
+    // ==============================
+    let currentSymbol = '';
+    let stockData = [];
+    let mainChartInstance = null;
+    let predChartInstance = null;
+
+    const COMPANY_META = {
+        'INFY.NS':      { name: 'Infosys',      short: 'INFY' },
+        'TCS.NS':       { name: 'Tata Consultancy', short: 'TCS' },
+        'RELIANCE.NS':  { name: 'Reliance Industries', short: 'REL' },
+        'AAPL':         { name: 'Apple Inc.',    short: 'AAPL' },
+        'MSFT':         { name: 'Microsoft',     short: 'MSFT' },
+        'GOOGL':        { name: 'Alphabet',      short: 'GOOG' }
+    };
+
+    // ==============================
+    // NAVIGATION
+    // ==============================
+    function switchPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('page-' + pageId).classList.add('active');
+        document.getElementById('nav-' + pageId).classList.add('active');
+    }
+
+    // ==============================
+    // TOAST NOTIFICATIONS
+    // ==============================
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast ' + type;
+        const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+        toast.innerHTML = `<span>${icons[type] || '📢'}</span> ${message}`;
+        container.appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(60px)'; setTimeout(() => toast.remove(), 400); }, 3500);
+    }
+
+    // ==============================
+    // GLOBAL DATA LOAD
+    // ==============================
+    async function loadGlobalData() {
+        const symbol = document.getElementById('globalSymbolInput').value.trim().toUpperCase();
+        if (!symbol) { showToast('Please enter a stock symbol.', 'error'); return; }
+
+        currentSymbol = symbol;
+        const btn = document.getElementById('loadDataBtn');
+        btn.classList.add('loading');
+        btn.innerHTML = '<span class="spinner"></span> Loading...';
+
+        showToast(`Fetching data for ${symbol}...`, 'info');
+
+        try {
+            // Parallel fetch: data + summary
+            const [dataRes, summaryRes] = await Promise.all([
+                fetch(`/data/${symbol}`),
+                fetch(`/summary/${symbol}`)
+            ]);
+
+            const data = await dataRes.json();
+            const summary = await summaryRes.json();
+
+            if (data.error) throw new Error(data.error);
+            if (summary.error) throw new Error(summary.error);
+
+            stockData = data;
+
+            // Update stats
+            document.getElementById('stat52High').textContent  = '$' + summary['52_week_high'].toLocaleString();
+            document.getElementById('stat52Low').textContent   = '$' + summary['52_week_low'].toLocaleString();
+            document.getElementById('statAvgClose').textContent = '$' + summary['average_closing_price'].toLocaleString();
+            document.getElementById('statSymbol').textContent  = symbol;
+
+            // Draw chart
+            drawMainChart(data, symbol);
+
+            // Populate raw data table
+            populateTable(data, symbol);
+
+            showToast(`${symbol} loaded successfully!`, 'success');
+        } catch (err) {
+            showToast(err.message || 'Failed to load data.', 'error');
+        } finally {
+            btn.classList.remove('loading');
+            btn.innerHTML = '<span>⚡</span> Analyze';
+        }
+    }
+
+    // Enter key handler
+    document.getElementById('globalSymbolInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') loadGlobalData();
+    });
+
+    // ==============================
+    // MAIN CHART
+    // ==============================
+    function drawMainChart(data, symbol) {
+        const labels = data.map(r => r.Date.split(' ')[0]);
+        const closes = data.map(r => r.Close);
+        const ctx = document.getElementById('mainChart').getContext('2d');
+
+        if (mainChartInstance) mainChartInstance.destroy();
+
+        const gradient = ctx.createLinearGradient(0, 0, 0, 350);
+        gradient.addColorStop(0, 'rgba(99, 102, 241, 0.3)');
+        gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+
+        mainChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: `${symbol} Close`,
+                    data: closes,
+                    borderColor: '#6366f1',
+                    backgroundColor: gradient,
+                    borderWidth: 2.5,
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#6366f1',
+                    pointBorderColor: '#0a0e1a',
+                    pointBorderWidth: 2,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: chartOptions(symbol)
+        });
+    }
+
+    function chartOptions(symbol) {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1a2035',
+                    titleColor: '#f1f5f9',
+                    bodyColor: '#94a3b8',
+                    borderColor: '#6366f1',
+                    borderWidth: 1,
+                    padding: 12,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        title: (items) => items[0].label,
+                        label: (item) => `${symbol}: $${item.parsed.y.toFixed(2)}`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(148,163,184,0.06)' },
+                    ticks: { color: '#64748b', font: { size: 10, family: 'Inter' }, maxTicksLimit: 10 }
+                },
+                y: {
+                    grid: { color: 'rgba(148,163,184,0.06)' },
+                    ticks: { color: '#64748b', font: { size: 10, family: 'Inter' }, callback: v => '$' + v.toFixed(0) }
+                }
+            },
+            interaction: { mode: 'index', intersect: false }
+        };
+    }
+
+    // ==============================
+    // PREDICTIONS
+    // ==============================
+    async function runPrediction() {
+        if (!currentSymbol) { showToast('Analyze a stock on the Dashboard first.', 'error'); return; }
+
+        const btn = document.getElementById('predictBtn');
+        btn.classList.add('loading');
+        btn.innerHTML = '<span class="spinner"></span> Predicting...';
+
+        try {
+            const res = await fetch(`/predict/${currentSymbol}`);
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            // Populate grid
+            const grid = document.getElementById('predictionGrid');
+            grid.innerHTML = '';
+            data.dates.forEach((d, i) => {
+                grid.innerHTML += `
+                    <div class="prediction-item">
+                        <div class="pred-date">${d}</div>
+                        <div class="pred-price">$${data.predicted_close[i].toFixed(2)}</div>
+                    </div>`;
+            });
+            document.getElementById('predictionPanel').classList.add('visible');
+
+            // Prediction Chart: merge historical + predicted
+            drawPredictionChart(data);
+            document.getElementById('predChartPanel').style.display = 'block';
+
+            showToast('Prediction generated!', 'success');
+        } catch (err) {
+            showToast(err.message || 'Prediction failed.', 'error');
+        } finally {
+            btn.classList.remove('loading');
+            btn.innerHTML = '<span>🧠</span> Generate Forecast';
+        }
+    }
+
+    function drawPredictionChart(predData) {
+        const histLabels = stockData.slice(-14).map(r => r.Date.split(' ')[0]);
+        const histPrices = stockData.slice(-14).map(r => r.Close);
+
+        const allLabels = [...histLabels, ...predData.dates];
+        const historicalLine = [...histPrices, ...Array(predData.dates.length).fill(null)];
+        const predictedLine = [...Array(histPrices.length - 1).fill(null), histPrices[histPrices.length - 1], ...predData.predicted_close];
+
+        const ctx = document.getElementById('predictionChart').getContext('2d');
+        if (predChartInstance) predChartInstance.destroy();
+
+        predChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: allLabels,
+                datasets: [
+                    {
+                        label: 'Historical',
+                        data: historicalLine,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99,102,241,0.1)',
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#6366f1'
+                    },
+                    {
+                        label: 'Predicted',
+                        data: predictedLine,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16,185,129,0.1)',
+                        borderWidth: 2.5,
+                        borderDash: [6, 4],
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#0a0e1a',
+                        pointBorderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                ...chartOptions(currentSymbol),
+                plugins: {
+                    ...chartOptions(currentSymbol).plugins,
+                    legend: {
+                        display: true,
+                        labels: { color: '#94a3b8', font: { family: 'Inter', size: 11 }, usePointStyle: true, pointStyle: 'circle' }
+                    }
+                }
+            }
+        });
+    }
+
+    // ==============================
+    // COMPARE
+    // ==============================
+    async function runCompare() {
+        const s1 = document.getElementById('compareSymbol1').value.trim().toUpperCase();
+        const s2 = document.getElementById('compareSymbol2').value.trim().toUpperCase();
+        if (!s1 || !s2) { showToast('Enter both symbols.', 'error'); return; }
+
+        showToast(`Comparing ${s1} vs ${s2}...`, 'info');
+        try {
+            const res = await fetch(`/compare?symbol1=${s1}&symbol2=${s2}`);
+            const data = await res.json();
+
+            document.getElementById('cmpSym1').textContent = s1;
+            document.getElementById('cmpSym2').textContent = s2;
+            document.getElementById('cmpPrice1').textContent = data.comparison[s1] != null ? '$' + data.comparison[s1].toFixed(2) : 'N/A';
+            document.getElementById('cmpPrice2').textContent = data.comparison[s2] != null ? '$' + data.comparison[s2].toFixed(2) : 'N/A';
+            document.getElementById('compareResult').classList.add('visible');
+            showToast('Comparison complete!', 'success');
+        } catch (err) {
+            showToast('Comparison failed.', 'error');
+        }
+    }
+
+    async function runCorrelation() {
+        const s1 = document.getElementById('compareSymbol1').value.trim().toUpperCase();
+        const s2 = document.getElementById('compareSymbol2').value.trim().toUpperCase();
+        if (!s1 || !s2) { showToast('Enter both symbols.', 'error'); return; }
+
+        showToast(`Calculating correlation...`, 'info');
+        try {
+            const res = await fetch(`/correlation?symbol1=${s1}&symbol2=${s2}`);
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            const val = data.correlation;
+            document.getElementById('corrValue').textContent = val.toFixed(4);
+            document.getElementById('corrBar').style.width = (Math.abs(val) * 100) + '%';
+            document.getElementById('correlationResult').classList.add('visible');
+            showToast(`Correlation: ${val.toFixed(4)}`, 'success');
+        } catch (err) {
+            showToast(err.message || 'Correlation failed.', 'error');
+        }
+    }
+
+    // ==============================
+    // WATCHLIST
+    // ==============================
+    async function loadCompanies() {
+        try {
+            const res = await fetch('/companies');
+            const data = await res.json();
+            const grid = document.getElementById('companyGrid');
+            grid.innerHTML = '';
+            data.companies.forEach(sym => {
+                const meta = COMPANY_META[sym] || { name: sym, short: sym.slice(0, 4) };
+                grid.innerHTML += `
+                    <div class="company-card" onclick="quickAnalyze('${sym}')">
+                        <div class="company-icon">${meta.short.slice(0, 2)}</div>
+                        <div class="company-info">
+                            <h4>${meta.name}</h4>
+                            <p>${sym}</p>
+                        </div>
+                    </div>`;
+            });
+        } catch (err) {
+            console.error('Failed to load companies:', err);
+        }
+    }
+
+    function quickAnalyze(symbol) {
+        document.getElementById('globalSymbolInput').value = symbol;
+        switchPage('dashboard');
+        loadGlobalData();
+    }
+
+    // ==============================
+    // RAW DATA TABLE
+    // ==============================
+    function populateTable(data, symbol) {
+        document.getElementById('tableTitle').textContent = `${symbol} — Last ${data.length} Records`;
+        const tbody = document.getElementById('dataTableBody');
+        tbody.innerHTML = '';
+        data.forEach(r => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${r.Date.split(' ')[0]}</td>
+                    <td>${r.Open != null ? r.Open.toFixed(2) : '—'}</td>
+                    <td>${r.High != null ? r.High.toFixed(2) : '—'}</td>
+                    <td>${r.Low  != null ? r.Low.toFixed(2)  : '—'}</td>
+                    <td style="font-weight:600; color: var(--accent-primary);">${r.Close != null ? r.Close.toFixed(2) : '—'}</td>
+                    <td>${r.Volume != null ? Number(r.Volume).toLocaleString() : '—'}</td>
+                    <td style="color: ${r.Daily_Return != null && r.Daily_Return >= 0 ? 'var(--accent-success)' : 'var(--accent-danger)'};">
+                        ${r.Daily_Return != null ? (r.Daily_Return * 100).toFixed(2) + '%' : '—'}
+                    </td>
+                    <td>${r.MA_7 != null ? r.MA_7.toFixed(2) : '—'}</td>
+                    <td>${r.Volatility_7 != null ? r.Volatility_7.toFixed(2) : '—'}</td>
+                </tr>`;
+        });
+    }
+
+    // ==============================
+    // INIT
+    // ==============================
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCompanies();
+    });
+</script>
+
+</body>
+</html>
